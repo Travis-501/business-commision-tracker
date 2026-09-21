@@ -1,49 +1,66 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@/components/Themed';
+import { Text, useThemeColor } from '@/components/Themed';
 import { BusinessSwitcher } from '@/src/components/BusinessSwitcher';
 import { useBusinessBooks } from '@/src/context/BusinessBooksContext';
 
 export default function AlertsScreen() {
   const { reminders, clients, saveReminder, removeReminder } = useBusinessBooks();
+  const screenBackground = useThemeColor({ light: '#f8fafc', dark: '#020817' }, 'background');
+  const cardBackground = useThemeColor({ light: '#ffffff', dark: '#111827' }, 'background');
+  const cardBorder = useThemeColor({ light: '#dbe2ea', dark: '#334155' }, 'background');
+  const inputBackground = useThemeColor({ light: '#ffffff', dark: '#0f172a' }, 'background');
+  const inputBorder = useThemeColor({ light: '#cbd5e1', dark: '#475569' }, 'background');
+  const inputText = useThemeColor({ light: '#0f172a', dark: '#f8fafc' }, 'text');
+  const inputPlaceholder = useThemeColor({ light: '#64748b', dark: '#94a3b8' }, 'text');
+  const chipBackground = useThemeColor({ light: '#e2e8f0', dark: '#1f2937' }, 'background');
+  const chipActive = useThemeColor({ light: '#bfdbfe', dark: '#2563eb' }, 'background');
   const [title, setTitle] = useState('Appointment');
   const [body, setBody] = useState('');
   const [when, setWhen] = useState('');
   const [clientId, setClientId] = useState<string | null>(null);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: screenBackground }]}>
       <Text style={styles.title}>Alerts & reminders</Text>
       <BusinessSwitcher />
 
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: cardBackground, borderColor: cardBorder }]}> 
         <Text style={styles.sectionTitle}>Customer appointment</Text>
-        <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Title" />
         <TextInput
-          style={[styles.input, styles.notes]}
+          style={[styles.input, { backgroundColor: inputBackground, borderColor: inputBorder, color: inputText }]}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Title"
+          placeholderTextColor={inputPlaceholder}
+        />
+        <TextInput
+          style={[styles.input, styles.notes, { backgroundColor: inputBackground, borderColor: inputBorder, color: inputText }]}
           value={body}
           onChangeText={setBody}
           placeholder="Custom message"
+          placeholderTextColor={inputPlaceholder}
           multiline
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: inputBackground, borderColor: inputBorder, color: inputText }]}
           value={when}
           onChangeText={setWhen}
           placeholder="When (ISO: 2026-09-21T15:00:00)"
+          placeholderTextColor={inputPlaceholder}
         />
         <Text style={styles.label}>Link to client (optional)</Text>
         <View style={styles.chips}>
           <Pressable
-            style={[styles.chip, clientId === null && styles.chipActive]}
+            style={[styles.chip, { backgroundColor: clientId === null ? chipActive : chipBackground }]}
             onPress={() => setClientId(null)}>
             <Text>None</Text>
           </Pressable>
           {clients.map((c) => (
             <Pressable
               key={c.id}
-              style={[styles.chip, clientId === c.id && styles.chipActive]}
+              style={[styles.chip, { backgroundColor: clientId === c.id ? chipActive : chipBackground }]}
               onPress={() => setClientId(c.id)}>
               <Text>{c.name}</Text>
             </Pressable>
@@ -88,7 +105,6 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#cbd5e1',
     marginBottom: 16,
   },
   sectionTitle: { fontWeight: '600', marginBottom: 8 },

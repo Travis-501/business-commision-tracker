@@ -1,35 +1,48 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@/components/Themed';
+import { Text, useThemeColor } from '@/components/Themed';
 import { BusinessSwitcher } from '@/src/components/BusinessSwitcher';
 import { useBusinessBooks } from '@/src/context/BusinessBooksContext';
 
 export default function ClientsScreen() {
   const { clients, saveClient } = useBusinessBooks();
+  const screenBackground = useThemeColor({ light: '#f8fafc', dark: '#020817' }, 'background');
+  const cardBackground = useThemeColor({ light: '#ffffff', dark: '#111827' }, 'background');
+  const cardBorder = useThemeColor({ light: '#dbe2ea', dark: '#334155' }, 'background');
+  const inputText = useThemeColor({ light: '#0f172a', dark: '#f8fafc' }, 'text');
+  const inputPlaceholder = useThemeColor({ light: '#64748b', dark: '#94a3b8' }, 'text');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: screenBackground }]}>
       <Text style={styles.title}>Clients</Text>
       <BusinessSwitcher />
 
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: cardBackground, borderColor: cardBorder }]}> 
         <Text style={styles.sectionTitle}>New client</Text>
-        <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: inputText }]}
+          placeholder="Name"
+          placeholderTextColor={inputPlaceholder}
+          value={name}
+          onChangeText={setName}
+        />
+        <TextInput
+          style={[styles.input, { color: inputText }]}
           placeholder="Phone (for SMS / WhatsApp)"
+          placeholderTextColor={inputPlaceholder}
           keyboardType="phone-pad"
           value={phone}
           onChangeText={setPhone}
         />
         <TextInput
-          style={[styles.input, styles.notes]}
+          style={[styles.input, styles.notes, { color: inputText }]}
           placeholder="Notes"
+          placeholderTextColor={inputPlaceholder}
           multiline
           value={notes}
           onChangeText={setNotes}
@@ -48,15 +61,20 @@ export default function ClientsScreen() {
       </View>
 
       {clients.map((c) => (
-        <Link key={c.id} href={`/client/${c.id}`} asChild>
-          <Pressable style={styles.row}>
-            <View>
+        <View key={c.id} style={styles.row}>
+          <Link href={`/client/${c.id}`} asChild>
+            <Pressable style={styles.rowInfo}>
               <Text style={styles.rowTitle}>{c.name}</Text>
               <Text style={styles.meta}>{c.phone || 'No phone'}</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
-        </Link>
+            </Pressable>
+          </Link>
+          {c.phone ? (
+            <Pressable onPress={() => Linking.openURL(`tel:${c.phone}`)} style={styles.callBtn}>
+              <Text style={styles.callText}>Call</Text>
+            </Pressable>
+          ) : null}
+          <Text style={styles.chevron}>›</Text>
+        </View>
       ))}
     </ScrollView>
   );
@@ -69,7 +87,6 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#cbd5e1',
     marginBottom: 16,
   },
   sectionTitle: { fontWeight: '600', marginBottom: 8 },
@@ -95,8 +112,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e2e8f0',
+    gap: 8,
   },
+  rowInfo: { flex: 1 },
   rowTitle: { fontWeight: '600', fontSize: 16 },
   meta: { fontSize: 13, opacity: 0.65 },
+  callBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: '#dbeafe' },
+  callText: { color: '#1d4ed8', fontWeight: '600' },
   chevron: { fontSize: 22, opacity: 0.4 },
 });

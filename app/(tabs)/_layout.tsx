@@ -1,9 +1,9 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -19,11 +19,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'chart.bar', android: 'home', web: 'home' }}
-              tintColor={color}
-              size={24}
-            />
+            <Ionicons name="home" color={color} size={24} />
           ),
         }}
       />
@@ -32,11 +28,7 @@ export default function TabLayout() {
         options={{
           title: 'Ledger',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'book', android: 'menu', web: 'menu' }}
-              tintColor={color}
-              size={24}
-            />
+            <Ionicons name="book" color={color} size={24} />
           ),
         }}
       />
@@ -45,11 +37,16 @@ export default function TabLayout() {
         options={{
           title: 'Clients',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'person.2', android: 'people', web: 'people' }}
-              tintColor={color}
-              size={24}
-            />
+            <Ionicons name="people" color={color} size={24} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="invoices"
+        options={{
+          title: 'Invoices',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="receipt" color={color} size={24} />
           ),
         }}
       />
@@ -58,11 +55,7 @@ export default function TabLayout() {
         options={{
           title: 'Alerts',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'bell', android: 'notifications', web: 'notifications' }}
-              tintColor={color}
-              size={24}
-            />
+            <Ionicons name="notifications" color={color} size={24} />
           ),
         }}
       />
@@ -71,11 +64,7 @@ export default function TabLayout() {
         options={{
           title: 'Chat',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'message', android: 'chat', web: 'chat' }}
-              tintColor={color}
-              size={24}
-            />
+            <Ionicons name="chatbubbles" color={color} size={24} />
           ),
         }}
       />
@@ -84,11 +73,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'gearshape', android: 'settings', web: 'settings' }}
-              tintColor={color}
-              size={24}
-            />
+            <Ionicons name="settings" color={color} size={24} />
           ),
         }}
       />

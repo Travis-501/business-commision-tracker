@@ -1,33 +1,69 @@
-import { router, Stack } from 'expo-router';
-import { useState } from 'react';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@/components/Themed';
+import { Text, useThemeColor } from '@/components/Themed';
 import { useBusinessBooks } from '@/src/context/BusinessBooksContext';
-import type { EntryType } from '@/src/types/models';
 import { newId } from '@/src/lib/id';
+import type { EntryType } from '@/src/types/models';
 
 const types: EntryType[] = ['income', 'expense', 'worker_pay', 'payment'];
 
 export default function NewEntryScreen() {
-  const { clients, saveEntry } = useBusinessBooks();
+  const { entryId } = useLocalSearchParams<{ entryId?: string }>();
+  const { clients, entries, saveEntry } = useBusinessBooks();
+  const screenBackground = useThemeColor({ light: '#f8fafc', dark: '#020817' }, 'background');
+  const pillBackground = useThemeColor({ light: '#e2e8f0', dark: '#1f2937' }, 'background');
+  const pillActive = useThemeColor({ light: '#bfdbfe', dark: '#2563eb' }, 'background');
+  const inputText = useThemeColor({ light: '#0f172a', dark: '#f8fafc' }, 'text');
+  const inputPlaceholder = useThemeColor({ light: '#64748b', dark: '#94a3b8' }, 'text');
+  const editingEntry = entryId ? entries.find((entry) => entry.id === entryId) ?? null : null;
+
   const [type, setType] = useState<EntryType>('income');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [jobId, setJobId] = useState(newId().slice(0, 8).toUpperCase());
+  const [jobType, setJobType] = useState('');
+  const [spentMoney, setSpentMoney] = useState('');
+  const [clientReference, setClientReference] = useState('');
   const [clientId, setClientId] = useState<string | null>(null);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    if (!editingEntry) {
+      setType('income');
+      setAmount('');
+      setDescription('');
+      setJobId(newId().slice(0, 8).toUpperCase());
+      setJobType('');
+      setSpentMoney('');
+      setClientReference('');
+      setClientId(null);
+      setDate(new Date().toISOString().slice(0, 10));
+      return;
+    }
+
+    setType(editingEntry.type);
+    setAmount(String(editingEntry.amount));
+    setDescription(editingEntry.description);
+    setJobId(editingEntry.jobId || newId().slice(0, 8).toUpperCase());
+    setJobType(editingEntry.jobType || '');
+    setSpentMoney(String(editingEntry.spentMoney || ''));
+    setClientReference(editingEntry.clientReference || '');
+    setClientId(editingEntry.clientId ?? null);
+    setDate(editingEntry.entryDate.slice(0, 10));
+  }, [editingEntry]);
 
   return (
     <>
       <Stack.Screen options={{ title: 'New entry' }} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: screenBackground }]}>
         <Text style={styles.label}>Type</Text>
         <View style={styles.chips}>
           {types.map((t) => (
             <Pressable
               key={t}
-              style={[styles.chip, type === t && styles.chipActive]}
+              style={[styles.chip, { backgroundColor: type === t ? pillActive : pillBackground }, type === t && styles.chipActive]}
               onPress={() => setType(t)}>
               <Text>{t}</Text>
             </Pressable>
@@ -35,27 +71,53 @@ export default function NewEntryScreen() {
         </View>
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: inputText }]}
           placeholder="Amount"
+          placeholderTextColor={inputPlaceholder}
           keyboardType="decimal-pad"
           value={amount}
           onChangeText={setAmount}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: inputText }]}
           placeholder="Job ID"
+          placeholderTextColor={inputPlaceholder}
           value={jobId}
           onChangeText={setJobId}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: inputText }]}
+          placeholder="Job type (roofing, plumbing, install, etc.)"
+          placeholderTextColor={inputPlaceholder}
+          value={jobType}
+          onChangeText={setJobType}
+        />
+        <TextInput
+          style={[styles.input, { color: inputText }]}
+          placeholder="Client reference / details"
+          placeholderTextColor={inputPlaceholder}
+          value={clientReference}
+          onChangeText={setClientReference}
+        />
+        <TextInput
+          style={[styles.input, { color: inputText }]}
+          placeholder="Spent money by worker"
+          placeholderTextColor={inputPlaceholder}
+          keyboardType="decimal-pad"
+          value={spentMoney}
+          onChangeText={setSpentMoney}
+        />
+        <TextInput
+          style={[styles.input, { color: inputText }]}
           placeholder="Date (YYYY-MM-DD)"
+          placeholderTextColor={inputPlaceholder}
           value={date}
           onChangeText={setDate}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: inputText }]}
           placeholder="Description"
+          placeholderTextColor={inputPlaceholder}
           value={description}
           onChangeText={setDescription}
         />
@@ -63,14 +125,14 @@ export default function NewEntryScreen() {
         <Text style={styles.label}>Client</Text>
         <View style={styles.chips}>
           <Pressable
-            style={[styles.chip, clientId === null && styles.chipActive]}
+            style={[styles.chip, { backgroundColor: clientId === null ? pillActive : pillBackground }, clientId === null && styles.chipActive]}
             onPress={() => setClientId(null)}>
             <Text>None</Text>
           </Pressable>
           {clients.map((c) => (
             <Pressable
               key={c.id}
-              style={[styles.chip, clientId === c.id && styles.chipActive]}
+              style={[styles.chip, { backgroundColor: clientId === c.id ? pillActive : pillBackground }, clientId === c.id && styles.chipActive]}
               onPress={() => setClientId(c.id)}>
               <Text>{c.name}</Text>
             </Pressable>
@@ -79,19 +141,45 @@ export default function NewEntryScreen() {
 
         <Pressable
           style={styles.primaryBtn}
+          disabled={
+            !amount || Number(amount) <= 0 || !description.trim() || !jobId.trim() || !jobType.trim() || (!clientId && !clientReference.trim())
+          }
           onPress={() => {
+            const numericAmount = Number(amount);
+            const trimmedDescription = description.trim();
+            const trimmedJobId = jobId.trim();
+            const trimmedJobType = jobType.trim();
+            const trimmedClientReference = clientReference.trim();
+
+            if (
+              !trimmedDescription ||
+              !Number.isFinite(numericAmount) ||
+              numericAmount <= 0 ||
+              !trimmedJobId ||
+              !trimmedJobType ||
+              (!clientId && !trimmedClientReference)
+            ) {
+              return;
+            }
+
             saveEntry({
+              id: editingEntry?.id,
               type,
-              amount: parseFloat(amount) || 0,
-              description: description.trim(),
+              amount: numericAmount,
+              clientReference: trimmedClientReference,
+              description: trimmedDescription,
               entryDate: `${date}T12:00:00.000Z`,
               clientId,
-              jobId: jobId.trim() || newId().slice(0, 8).toUpperCase(),
+              jobId: trimmedJobId,
+              jobType: trimmedJobType,
+              spentMoney: parseFloat(spentMoney) || 0,
+              invoiceId: editingEntry?.invoiceId ?? null,
+              invoiceNumber: editingEntry?.invoiceNumber ?? '',
               isDraft: false,
             });
             router.back();
           }}>
-          <Text style={styles.primaryBtnText}>Save entry</Text>
+          <Text style={styles.primaryBtnText}>{editingEntry ? 'Update entry' : 'Save entry'}</Text>
         </Pressable>
       </ScrollView>
     </>

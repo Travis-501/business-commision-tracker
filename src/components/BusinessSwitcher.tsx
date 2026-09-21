@@ -1,10 +1,14 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@/components/Themed';
+import { Text, useThemeColor } from '@/components/Themed';
 import { useBusinessBooks } from '@/src/context/BusinessBooksContext';
 
 export function BusinessSwitcher() {
   const { businesses, activeBusiness, setActiveBusiness } = useBusinessBooks();
+  const chipBackground = useThemeColor({ light: '#e8ecf1', dark: '#1f2937' }, 'background');
+  const chipActiveBackground = useThemeColor({ light: '#2563eb', dark: '#3b82f6' }, 'background');
+  const chipText = useThemeColor({ light: '#334155', dark: '#e2e8f0' }, 'text');
+  const chipTextActive = useThemeColor({ light: '#ffffff', dark: '#f8fafc' }, 'text');
 
   return (
     <View style={styles.row}>
@@ -14,8 +18,8 @@ export function BusinessSwitcher() {
           <Pressable
             key={b.id}
             onPress={() => setActiveBusiness(b.id)}
-            style={[styles.chip, active && styles.chipActive]}>
-            <Text style={[styles.chipText, active && styles.chipTextActive]}>{b.name}</Text>
+            style={[styles.chip, { backgroundColor: active ? chipActiveBackground : chipBackground }]}>
+            <Text style={[styles.chipText, { color: active ? chipTextActive : chipText }]}>{b.name}</Text>
           </Pressable>
         );
       })}

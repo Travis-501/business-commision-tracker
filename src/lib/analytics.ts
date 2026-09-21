@@ -4,6 +4,8 @@ export interface PeriodPoint {
   label: string;
   income: number;
   net: number;
+  spend: number;
+  workerPay: number;
 }
 
 export function incomeByMonth(entries: LedgerEntry[], months = 6): PeriodPoint[] {
@@ -18,6 +20,10 @@ export function incomeByMonth(entries: LedgerEntry[], months = 6): PeriodPoint[]
     const income = monthEntries
       .filter((e) => e.type === 'income')
       .reduce((s, e) => s + e.amount, 0);
+    const spend = monthEntries.reduce((s, e) => s + (Number(e.spentMoney) || 0), 0);
+    const workerPay = monthEntries
+      .filter((e) => e.type === 'worker_pay')
+      .reduce((s, e) => s + e.amount, 0);
     const expenses = monthEntries
       .filter((e) => e.type !== 'income')
       .reduce((s, e) => s + e.amount, 0);
@@ -25,6 +31,8 @@ export function incomeByMonth(entries: LedgerEntry[], months = 6): PeriodPoint[]
       label: d.toLocaleDateString(undefined, { month: 'short' }),
       income,
       net: income - expenses,
+      spend,
+      workerPay,
     });
   }
   return points;

@@ -8,13 +8,23 @@ export function dailyExpenses(entries: LedgerEntry[], dayIso: string): number {
   return sumByType(entries, dayIso, ['expense', 'worker_pay', 'payment']);
 }
 
+export function dailySpentMoney(entries: LedgerEntry[], dayIso: string): number {
+  return entries
+    .filter((e) => !e.isDraft && e.entryDate.startsWith(dayIso))
+    .reduce((sum, e) => sum + (Number(e.spentMoney) || 0), 0);
+}
+
 export function netForDay(entries: LedgerEntry[], dayIso: string): number {
   return dailyIncome(entries, dayIso) - dailyExpenses(entries, dayIso);
 }
 
-export function suggestedWorkerPay(business: Business, dailyIncomeAmount: number): number {
+export function suggestedWorkerPay(
+  business: Business,
+  dailyIncomeAmount: number,
+  extraWorkerValue = 0
+): number {
   if (business.workerPayDenominator <= 0) return 0;
-  return (dailyIncomeAmount * business.workerPayNumerator) / business.workerPayDenominator;
+  return ((dailyIncomeAmount + extraWorkerValue) * business.workerPayNumerator) / business.workerPayDenominator;
 }
 
 export function applyCustomRatio(amount: number, ratio: CustomRatio): number {
@@ -30,6 +40,7 @@ export function simulateEntryChange(
 ): {
   entries: LedgerEntry[];
   dailyIncome: number;
+  dailySpentMoney: number;
   suggestedWorkerPay: number;
   net: number;
 } {
@@ -41,10 +52,12 @@ export function simulateEntryChange(
     }
   }
   const income = dailyIncome(next, dayIso);
+  const spent = dailySpentMoney(next, dayIso);
   return {
     entries: next,
     dailyIncome: income,
-    suggestedWorkerPay: suggestedWorkerPay(business, income),
+    dailySpentMoney: spent,
+    suggestedWorkerPay: suggestedWorkerPay(business, income, spent),
     net: netForDay(next, dayIso),
   };
 }

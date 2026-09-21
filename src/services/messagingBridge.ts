@@ -18,6 +18,14 @@ export async function sendExternalMessage(
     return { ok: false, error: 'Internal channel does not use external APIs', queuedLocally: true };
   }
 
+  if (!toPhone || !toPhone.trim()) {
+    return {
+      ok: false,
+      error: 'Customer phone number is missing',
+      queuedLocally: true,
+    };
+  }
+
   if (channel === 'sms') {
     if (config.smsProvider !== 'twilio' || !config.twilioAccountSid || !config.twilioAuthToken) {
       return {
