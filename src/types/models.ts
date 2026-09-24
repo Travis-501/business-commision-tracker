@@ -18,6 +18,10 @@ export interface Invoice {
   issueDate: string;
   dueDate: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue';
+  /** how this invoice was paid (cash, card, transfer, etc.) */
+  paymentMethod: string;
+  /** 'paid' or 'not_paid' */
+  paymentStatus: 'paid' | 'not_paid';
   subtotal: number;
   taxRate: number;
   discount: number;
@@ -88,6 +92,10 @@ export interface LedgerEntry {
   invoiceNumber: string;
   /** draft entries let you "play" with numbers before saving */
   isDraft: boolean;
+  /** how this entry was paid (cash, card, transfer, etc.) */
+  paymentMethod: string;
+  /** 'paid' or 'not_paid' */
+  paymentStatus: 'paid' | 'not_paid';
 }
 
 export interface Reminder {

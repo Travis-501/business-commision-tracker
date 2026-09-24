@@ -32,6 +32,8 @@ export default function InvoicesScreen() {
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10));
   const [taxRate, setTaxRate] = useState('0');
   const [discount, setDiscount] = useState('0');
+  const [paymentMethodField, setPaymentMethodField] = useState('');
+  const [paymentStatusField, setPaymentStatusField] = useState<'paid' | 'not_paid'>('not_paid');
   const [notes, setNotes] = useState('Thank you for your business.');
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([
     { id: 'item-1', description: 'Service', quantity: 1, rate: 0 },
@@ -59,6 +61,8 @@ export default function InvoicesScreen() {
       issueDate,
       dueDate,
       status: 'draft',
+      paymentMethod: paymentMethodField,
+      paymentStatus: paymentStatusField,
       subtotal,
       taxRate: Number(taxRate || 0),
       discount: Number(discount || 0),
@@ -304,6 +308,25 @@ export default function InvoicesScreen() {
           value={notes}
           onChangeText={setNotes}
         />
+
+        <Text style={styles.label}>Payment method</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: inputBackground, borderColor: inputBorder, color: inputText }]}
+          placeholder="cash, card, transfer..."
+          placeholderTextColor={inputPlaceholder}
+          value={paymentMethodField}
+          onChangeText={setPaymentMethodField}
+        />
+
+        <Text style={styles.label}>Payment status</Text>
+        <View style={styles.chips}>
+          <Pressable style={[styles.chip, paymentStatusField === 'not_paid' && styles.chipActive]} onPress={() => setPaymentStatusField('not_paid')}>
+            <Text>Not paid</Text>
+          </Pressable>
+          <Pressable style={[styles.chip, paymentStatusField === 'paid' && styles.chipActive]} onPress={() => setPaymentStatusField('paid')}>
+            <Text>Paid</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.summaryRow}>
           <Text>Subtotal:</Text>

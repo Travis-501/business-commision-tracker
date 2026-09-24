@@ -27,6 +27,8 @@ export default function NewEntryScreen() {
   const [spentMoney, setSpentMoney] = useState('');
   const [clientReference, setClientReference] = useState('');
   const [clientId, setClientId] = useState<string | null>(null);
+  const [paymentMethodField, setPaymentMethodField] = useState('');
+  const [paymentStatusField, setPaymentStatusField] = useState<'paid' | 'not_paid'>('not_paid');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
   useEffect(() => {
@@ -51,6 +53,8 @@ export default function NewEntryScreen() {
     setSpentMoney(String(editingEntry.spentMoney || ''));
     setClientReference(editingEntry.clientReference || '');
     setClientId(editingEntry.clientId ?? null);
+    setPaymentMethodField((editingEntry as any).paymentMethod || '');
+    setPaymentStatusField((editingEntry as any).paymentStatus || 'not_paid');
     setDate(editingEntry.entryDate.slice(0, 10));
   }, [editingEntry]);
 
@@ -173,6 +177,8 @@ export default function NewEntryScreen() {
               jobId: trimmedJobId,
               jobType: trimmedJobType,
               spentMoney: parseFloat(spentMoney) || 0,
+              paymentMethod: paymentMethodField,
+              paymentStatus: paymentStatusField,
               invoiceId: editingEntry?.invoiceId ?? null,
               invoiceNumber: editingEntry?.invoiceNumber ?? '',
               isDraft: false,

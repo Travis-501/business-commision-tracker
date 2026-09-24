@@ -1,5 +1,12 @@
 import * as SQLite from 'expo-sqlite';
 
+// Polyfill SharedArrayBuffer on web when not available to avoid
+// expo-sqlite web worker errors in dev where SAB isn't enabled.
+// This is a safe fallback for local development (not a security boundary).
+if (typeof (globalThis as any).SharedArrayBuffer === 'undefined') {
+  (globalThis as any).SharedArrayBuffer = ArrayBuffer;
+}
+
 import { newId } from '@/src/lib/id';
 import type {
   Business,
@@ -62,6 +69,8 @@ function initSchema(database: SQLite.SQLiteDatabase) {
       type TEXT NOT NULL,
       amount REAL NOT NULL,
       spent_money REAL NOT NULL DEFAULT 0,
+      payment_method TEXT NOT NULL DEFAULT '',
+      payment_status TEXT NOT NULL DEFAULT 'not_paid',
       description TEXT NOT NULL,
       entry_date TEXT NOT NULL,
       is_draft INTEGER NOT NULL DEFAULT 0,
@@ -121,6 +130,8 @@ function initSchema(database: SQLite.SQLiteDatabase) {
       client_id TEXT,
       client_name TEXT NOT NULL,
       invoice_number TEXT NOT NULL,
+      payment_method TEXT NOT NULL DEFAULT '',
+      payment_status TEXT NOT NULL DEFAULT 'not_paid',
       issue_date TEXT NOT NULL,
       due_date TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'draft',
@@ -170,6 +181,12 @@ function ensureEntryColumns(database: SQLite.SQLiteDatabase) {
   }
   if (!existing.has('invoice_number')) {
     database.execSync("ALTER TABLE entries ADD COLUMN invoice_number TEXT NOT NULL DEFAULT ''; ");
+  }
+  if (!existing.has('payment_method')) {
+    database.execSync("ALTER TABLE entries ADD COLUMN payment_method TEXT NOT NULL DEFAULT ''; ");
+  }
+  if (!existing.has('payment_status')) {
+    database.execSync("ALTER TABLE entries ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'not_paid'; ");
   }
 }
 
@@ -230,6 +247,12 @@ function ensureInvoiceColumns(database: SQLite.SQLiteDatabase) {
   }
   if (!existing.has('invoice_number')) {
     database.execSync("ALTER TABLE invoices ADD COLUMN invoice_number TEXT NOT NULL DEFAULT ''; ");
+  }
+  if (!existing.has('payment_method')) {
+    database.execSync("ALTER TABLE invoices ADD COLUMN payment_method TEXT NOT NULL DEFAULT ''; ");
+  }
+  if (!existing.has('payment_status')) {
+    database.execSync("ALTER TABLE invoices ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'not_paid';");
   }
   if (!existing.has('issue_date')) {
     database.execSync("ALTER TABLE invoices ADD COLUMN issue_date TEXT NOT NULL DEFAULT ''; ");
@@ -521,6 +544,8 @@ function rowToEntry(row: Record<string, unknown>): LedgerEntry {
     type: row.type as LedgerEntry['type'],
     amount: Number(row.amount),
     spentMoney: Number(row.spent_money ?? 0),
+    paymentMethod: String(row.payment_method ?? ''),
+    paymentStatus: (row.payment_status as LedgerEntry['paymentStatus']) ?? 'not_paid',
     description: String(row.description),
     entryDate: String(row.entry_date),
     invoiceId: row.invoice_id ? String(row.invoice_id) : null,
@@ -531,8 +556,8 @@ function rowToEntry(row: Record<string, unknown>): LedgerEntry {
 
 export function upsertEntry(entry: LedgerEntry) {
   getDb().runSync(
-    `INSERT INTO entries (id, business_id, client_id, client_reference, job_id, job_type, type, amount, spent_money, description, entry_date, invoice_id, invoice_number, is_draft)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO entries (id, business_id, client_id, client_reference, job_id, job_type, type, amount, spent_money, payment_method, payment_status, description, entry_date, invoice_id, invoice_number, is_draft)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        client_id = excluded.client_id,
        client_reference = excluded.client_reference,
@@ -541,6 +566,8 @@ export function upsertEntry(entry: LedgerEntry) {
        type = excluded.type,
        amount = excluded.amount,
        spent_money = excluded.spent_money,
+       payment_method = excluded.payment_method,
+       payment_status = excluded.payment_status,
        description = excluded.description,
        entry_date = excluded.entry_date,
        invoice_id = excluded.invoice_id,
@@ -555,6 +582,8 @@ export function upsertEntry(entry: LedgerEntry) {
     entry.type,
     entry.amount,
     entry.spentMoney,
+    entry.paymentMethod,
+    entry.paymentStatus,
     entry.description,
     entry.entryDate,
     entry.invoiceId,
@@ -579,6 +608,8 @@ export function listInvoices(businessId: string): Invoice[] {
       clientId: row.client_id ? String(row.client_id) : null,
       clientName: String(row.client_name ?? ''),
       invoiceNumber: String(row.invoice_number ?? ''),
+      paymentMethod: String(row.payment_method ?? ''),
+      paymentStatus: (row.payment_status as Invoice['paymentStatus']) ?? 'not_paid',
       issueDate: String(row.issue_date ?? ''),
       dueDate: String(row.due_date ?? ''),
       status: (row.status as Invoice['status']) ?? 'draft',
@@ -621,6 +652,8 @@ export function getInvoice(id: string): Invoice | null {
         return [] as Invoice['lineItems'];
       }
     })(),
+    paymentMethod: String(row.payment_method ?? ''),
+    paymentStatus: (row.payment_status as Invoice['paymentStatus']) ?? 'not_paid',
     createdAt: String(row.created_at ?? ''),
     updatedAt: String(row.updated_at ?? ''),
   };
@@ -628,12 +661,14 @@ export function getInvoice(id: string): Invoice | null {
 
 export function upsertInvoice(invoice: Invoice) {
   getDb().runSync(
-    `INSERT INTO invoices (id, business_id, client_id, client_name, invoice_number, issue_date, due_date, status, subtotal, tax_rate, discount, notes, line_items_json, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO invoices (id, business_id, client_id, client_name, invoice_number, payment_method, payment_status, issue_date, due_date, status, subtotal, tax_rate, discount, notes, line_items_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        client_id = excluded.client_id,
        client_name = excluded.client_name,
        invoice_number = excluded.invoice_number,
+       payment_method = excluded.payment_method,
+       payment_status = excluded.payment_status,
        issue_date = excluded.issue_date,
        due_date = excluded.due_date,
        status = excluded.status,
@@ -648,6 +683,8 @@ export function upsertInvoice(invoice: Invoice) {
     invoice.clientId,
     invoice.clientName,
     invoice.invoiceNumber,
+    invoice.paymentMethod,
+    invoice.paymentStatus,
     invoice.issueDate,
     invoice.dueDate,
     invoice.status,

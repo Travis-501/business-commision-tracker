@@ -24,6 +24,8 @@ export default function LedgerScreen() {
   const [summaryClientReference, setSummaryClientReference] = useState('');
   const [summarySpentMoney, setSummarySpentMoney] = useState('0');
   const [summaryDescription, setSummaryDescription] = useState('Daily income');
+  const [summaryPaymentMethod, setSummaryPaymentMethod] = useState('');
+  const [summaryPaymentStatus, setSummaryPaymentStatus] = useState<'paid' | 'not_paid'>('not_paid');
   const [draftId] = useState(() => newId());
   const cardBackground = useThemeColor({ light: '#ffffff', dark: '#111827' }, 'background');
   const cardBorder = useThemeColor({ light: '#dbe2ea', dark: '#334155' }, 'background');
@@ -48,6 +50,8 @@ export default function LedgerScreen() {
       entryDate: today,
       invoiceId: null,
       invoiceNumber: 'DRAFT-INV',
+      paymentMethod: '',
+      paymentStatus: 'not_paid' as const,
       isDraft: true,
     };
     return simulateEntryChange([...base, draft], activeBusiness, today, {});
@@ -150,6 +154,21 @@ export default function LedgerScreen() {
           />
           <TextInput
             style={[styles.input, { color: inputText }]}
+            value={summaryPaymentMethod}
+            onChangeText={setSummaryPaymentMethod}
+            placeholder="Payment method (cash, card...)"
+            placeholderTextColor={inputPlaceholder}
+          />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable style={[styles.chip, summaryPaymentStatus === 'not_paid' && styles.chipActive]} onPress={() => setSummaryPaymentStatus('not_paid')}>
+              <Text>Not paid</Text>
+            </Pressable>
+            <Pressable style={[styles.chip, summaryPaymentStatus === 'paid' && styles.chipActive]} onPress={() => setSummaryPaymentStatus('paid')}>
+              <Text>Paid</Text>
+            </Pressable>
+          </View>
+          <TextInput
+            style={[styles.input, { color: inputText }]}
             value={summaryDescription}
             onChangeText={setSummaryDescription}
             placeholder="Description"
@@ -170,6 +189,8 @@ export default function LedgerScreen() {
                 jobId: summaryJobId.trim() || newId().slice(0, 8).toUpperCase(),
                 jobType: summaryJobType.trim(),
                 spentMoney: parseFloat(summarySpentMoney) || 0,
+                paymentMethod: summaryPaymentMethod,
+                paymentStatus: summaryPaymentStatus,
                 invoiceId: null,
                 invoiceNumber: '',
                 isDraft: false,
@@ -284,6 +305,8 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 8,
   },
+  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: '#e2e8f0' },
+  chipActive: { backgroundColor: '#bfdbfe' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
